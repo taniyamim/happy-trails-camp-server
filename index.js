@@ -25,6 +25,31 @@ async function run() {
     try {
         // Connect the client to the server	(optional starting in v4.7)
         await client.connect();
+
+        // const usersCollection = client.db("happyDb").collection("users");
+        const classesCollection = client.db("happyDb").collection("classes");
+        const selectedCollection = client.db("happyDb").collection("selectedClass");
+
+        app.get('/classes', async (req, res) => {
+            const result = await classesCollection.find().toArray();
+            res.send(result);
+        })
+
+
+        // selected classes collection 
+        app.post('/selectedClasses', async (req, res) => {
+            const cls = req.body;
+            const result = await selectedCollection.insertOne(cls);
+            res.send(result);
+        });
+
+
+
+
+
+
+
+
         // Send a ping to confirm a successful connection
         await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
