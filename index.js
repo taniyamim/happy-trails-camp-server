@@ -36,12 +36,31 @@ async function run() {
         })
 
 
-        // selected classes collection 
+        // selected classes collection
+        
+       
+
+
         app.post('/selectedClasses', async (req, res) => {
             const cls = req.body;
             const result = await selectedCollection.insertOne(cls);
             res.send(result);
         });
+
+        app.get('/selectedClasses', async (req, res) => {
+            const email = req.query.email;
+            console.log(email);
+      
+            if (!email) {
+              res.send([]);
+            }
+            
+                const query = { email: email };
+                const result = await selectedCollection.find(query).toArray();
+                res.send(result);
+           
+          
+          });
 
 
 
