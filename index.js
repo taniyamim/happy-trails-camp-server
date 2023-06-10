@@ -48,6 +48,7 @@ async function run() {
         const usersCollection = client.db("happyDb").collection("users");
         const classesCollection = client.db("happyDb").collection("classes");
         const selectedCollection = client.db("happyDb").collection("selectedClass");
+        const addedClassCollection = client.db("happyDb").collection("addedClass");
 
         app.get('/classes', async (req, res) => {
             const result = await classesCollection.find().toArray();
@@ -60,6 +61,8 @@ async function run() {
       
             res.send({ token })
           })
+
+
 
 
         // selected classes collection
@@ -101,18 +104,7 @@ async function run() {
             res.send(result);
         });
 
-        app.get('/users/admin/:email', verifyJWT, async (req, res) => {
-            const email = req.params.email;
-      
-            if (req.decoded.email !== email) {
-              res.send({ admin: false })
-            }
-      
-            const query = { email: email }
-            const user = await usersCollection.findOne(query);
-            const result = { admin: user?.role === 'admin' }
-            res.send(result);
-          })
+        
 
         app.post('/users', async (req, res) => {
             const user = req.body;
@@ -126,6 +118,20 @@ async function run() {
             const result = await usersCollection.insertOne(user);
             res.send(result);
         });
+
+        // Admin/////////////
+        app.get('/users/admin/:email', verifyJWT, async (req, res) => {
+            const email = req.params.email;
+      
+            if (req.decoded.email !== email) {
+              res.send({ admin: false })
+            }
+      
+            const query = { email: email }
+            const user = await usersCollection.findOne(query);
+            const result = { admin: user?.role === 'admin' }
+            res.send(result);
+          })
 
         app.patch('/users/admin/:id', async (req, res) => {
             const id = req.params.id;
@@ -141,6 +147,76 @@ async function run() {
             res.send(result);
 
         });
+
+        app.get('/users/instructor/:email', verifyJWT, async (req, res) => {
+            const email = req.params.email;
+      
+            if (req.decoded.email !== email) {
+              res.send({ admin: false })
+            }
+      
+            const query = { email: email }
+            const user = await usersCollection.findOne(query);
+            const result = { admin: user?.role === 'instructor' }
+            res.send(result);
+          })
+
+        app.patch('/users/instructor/:id', async (req, res) => {
+            const id = req.params.id;
+            console.log(id);
+            const filter = { _id: new ObjectId(id) };
+            const updateDoc = {
+                $set: {
+                    role: 'instructor'
+                },
+            };
+
+            const result = await usersCollection.updateOne(filter, updateDoc);
+            res.send(result);
+
+        });
+
+
+
+
+
+        // adding a class
+        app.post('/addClass', verifyJWT, async (req, res) => {
+            // const { className, classImage, availableSeats, price } = req.body;
+            const newCls = req.body;
+            console.log(newCls);
+          
+            const result = await addedClassCollection.insertOne(newCls);
+            res.send(result);
+          });
+      
+
+        app.get('/addClass', verifyJWT, async (req, res) => {
+            const email = req.query.email;
+            console.log(email);
+
+            if (!email) {
+                res.send([]);
+            }
+            const decodedEmail = req.decoded.email;
+            if (email !== decodedEmail) {
+              return res.status(403).send({ error: true, message: 'forbidden access' })
+            }
+
+            const query = { email: email };
+            const result = await addedClassCollection.find(query).toArray();
+            res.send(result);
+
+
+        });
+        app.delete('/addClass/:id', async (req, res) => {
+            const id = req.params.id;
+            console.log(id);
+            const query = { _id: new ObjectId(id) }
+            const result = await addedClassCollection.deleteOne(query);
+            res.send(result);
+        })
+          
 
 
 
