@@ -1,9 +1,10 @@
+
 const express = require('express');
 const app = express();
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
-const stripe = require('stripe')(process.env.PAYMENT_SECRET_KEY)
 require('dotenv').config()
+const stripe = require('stripe')(process.env.PAYMENT_SECRET_KEY)
 const port = process.env.PORT || 5000;
 
 // middleware
@@ -57,7 +58,7 @@ async function run() {
             res.send(result);
         })
         app.get('/classes', async (req, res) => {
-            const result = await addedClassCollection.find({status: "Approved"}).toArray();
+            const result = await addedClassCollection.find({ status: "Approved" }).toArray();
             res.send(result);
         })
 
@@ -102,7 +103,7 @@ async function run() {
             const result = await selectedCollection.findOne(query);
             res.send(result);
         })
-        
+
         app.delete('/selectedClasses/:id', async (req, res) => {
             const id = req.params.id;
             console.log(id);
@@ -211,7 +212,7 @@ async function run() {
                 res.send([]);
             }
 
-            const query = { instructorEmail: email};
+            const query = { instructorEmail: email };
             const result = await addedClassCollection.find(query).toArray();
             res.send(result);
 
@@ -225,8 +226,8 @@ async function run() {
             res.send(result);
         })
 
-        app.get('/pendingClasses',async(req, res) =>{
-            const result = await addedClassCollection.find({status:"Pending"}).toArray();
+        app.get('/pendingClasses', async (req, res) => {
+            const result = await addedClassCollection.find({ status: "Pending" }).toArray();
             res.send(result);
         });
 
@@ -237,27 +238,44 @@ async function run() {
             const { price } = req.body;
             const amount = parseInt(price * 100);
             const paymentIntent = await stripe.paymentIntents.create({
-              amount: amount,
-              currency: 'usd',
-              payment_method_types: ['card']
+                amount: amount,
+                currency: 'usd',
+                payment_method_types: ['card']
             });
-      
+
             res.send({
-              clientSecret: paymentIntent.client_secret
+                clientSecret: paymentIntent.client_secret
             })
-          })
+        })
 
 
         // payment related api
+        // app.post('/payments', verifyJWT, async (req, res) => {
+        //     const payment = req.body;
+        //     console.log(payment);
+        //     const insertResult = await paymentCollection.insertOne(payment);
+        //     res.send(insertResult);
+        // })
+
         app.post('/payments', verifyJWT, async (req, res) => {
-            const payment = req.body;
-            const insertResult = await paymentCollection.insertOne(payment);
+            try {
+              const payment = req.body;
+              console.log(payment);
+              const insertResult = await paymentCollection.insertOne(payment);
+          
+              const buyClassId = payment.buyClassId;
+          
+              const query = { _id: new ObjectId(buyClassId) };
+              const deleteResult = await selectedCollection.deleteOne(query);
+          
+              res.send({ insertResult, deleteResult });
+            } catch (error) {
+              console.error('Error processing payment:', error);
+              res.status(500).send('Error processing payment');
+            }
+          });
+          
 
-            const query = { _id: { $in: payment.selectedClasses.map(id => new ObjectId(id)) } }
-            const deleteResult = await selectedCollection.deleteMany(query)
-
-            res.send({ insertResult, deleteResult });
-        })
 
 
 
