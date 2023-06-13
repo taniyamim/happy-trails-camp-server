@@ -257,6 +257,24 @@ async function run() {
         //     res.send(insertResult);
         // })
 
+        // app.post('/payments', verifyJWT, async (req, res) => {
+        //     try {
+        //       const payment = req.body;
+        //       console.log(payment);
+        //       const insertResult = await paymentCollection.insertOne(payment);
+          
+        //       const buyClassId = payment.buyClassId;
+          
+        //       const query = { _id: new ObjectId(buyClassId) };
+        //       const deleteResult = await selectedCollection.deleteOne(query);
+          
+        //       res.send({ insertResult, deleteResult });
+        //     } catch (error) {
+        //       console.error('Error processing payment:', error);
+        //       res.status(500).send('Error processing payment');
+        //     }
+        //   });
+
         app.post('/payments', verifyJWT, async (req, res) => {
             try {
               const payment = req.body;
@@ -264,16 +282,44 @@ async function run() {
               const insertResult = await paymentCollection.insertOne(payment);
           
               const buyClassId = payment.buyClassId;
+              const classId = payment.classId;
           
               const query = { _id: new ObjectId(buyClassId) };
               const deleteResult = await selectedCollection.deleteOne(query);
           
-              res.send({ insertResult, deleteResult });
+              // Update the availableSeats in addedClassCollection
+              const updateQuery = { _id: new ObjectId(classId) };
+              const update = { $inc: { availableSeats: -1 } }; // Reduce availableSeats by 1
+              const updateResult = await addedClassCollection.updateOne(updateQuery, update);
+          
+              res.send({ insertResult, deleteResult, updateResult });
             } catch (error) {
               console.error('Error processing payment:', error);
               res.status(500).send('Error processing payment');
             }
           });
+          
+
+
+
+          app.get('/payments', verifyJWT, async (req, res) => {
+            const email = req.query.email;
+            // console.log(email);
+
+            if (!email) {
+                res.send([]);
+            }
+            const decodedEmail = req.decoded.email;
+            if (email !== decodedEmail) {
+                return res.status(403).send({ error: true, message: 'forbidden access' })
+            }
+
+            const query = { email: email };
+            const result = await paymentCollection.find(query).toArray();
+            res.send(result);
+
+
+        });
           
 
 
