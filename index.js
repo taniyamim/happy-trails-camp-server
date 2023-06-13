@@ -217,6 +217,13 @@ async function run() {
             res.send(result);
 
         });
+        app.get('/addClass/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) }
+            const result = await addedClassCollection.findOne(query);
+            res.send(result);
+          });
+          
 
         app.delete('/addClass/:id', async (req, res) => {
             const id = req.params.id;
@@ -226,10 +233,55 @@ async function run() {
             res.send(result);
         })
 
-        app.get('/pendingClasses', async (req, res) => {
-            const result = await addedClassCollection.find({ status: "Pending" }).toArray();
+
+
+
+
+        app.get('/allClasses', async (req, res) => {
+            const result = await addedClassCollection.find().toArray();
             res.send(result);
         });
+
+        app.put('/allClasses/:classId', async (req, res) => {
+            const classId = req.params.classId;
+            const { status } = req.body;
+            console.log(status);
+            console.log(classId);
+            
+            try {
+              const query = { _id: new ObjectId(classId) };
+              const update = { $set: { status } };
+              const result = await addedClassCollection.updateOne(query, update);
+              
+              res.send(result);
+            } catch (error) {
+              console.error('Error updating class status:', error);
+              res.status(500).send('Error updating class status');
+            }
+          });
+
+
+
+          app.post('/allClasses/:classId', async (req, res) => {
+            const classId = req.params.classId;
+            const { feedback } = req.body;
+            
+            try {
+              const query = { _id: new ObjectId(classId) };
+              const update = { $set: { feedback } };
+              const result = await addedClassCollection.updateOne(query, update);
+              
+              res.send(result);
+            } catch (error) {
+              console.error('Error sending feedback:', error);
+              res.status(500).send('Error sending feedback');
+            }
+          });
+          
+          
+
+
+
 
 
 
@@ -256,25 +308,7 @@ async function run() {
         //     const insertResult = await paymentCollection.insertOne(payment);
         //     res.send(insertResult);
         // })
-
-        // app.post('/payments', verifyJWT, async (req, res) => {
-        //     try {
-        //       const payment = req.body;
-        //       console.log(payment);
-        //       const insertResult = await paymentCollection.insertOne(payment);
-          
-        //       const buyClassId = payment.buyClassId;
-          
-        //       const query = { _id: new ObjectId(buyClassId) };
-        //       const deleteResult = await selectedCollection.deleteOne(query);
-          
-        //       res.send({ insertResult, deleteResult });
-        //     } catch (error) {
-        //       console.error('Error processing payment:', error);
-        //       res.status(500).send('Error processing payment');
-        //     }
-        //   });
-
+      
         app.post('/payments', verifyJWT, async (req, res) => {
             try {
               const payment = req.body;
@@ -287,9 +321,11 @@ async function run() {
               const query = { _id: new ObjectId(buyClassId) };
               const deleteResult = await selectedCollection.deleteOne(query);
           
-              // Update the availableSeats in addedClassCollection
+              // Update the availableSeats and enrolledStudents in addedClassCollection
               const updateQuery = { _id: new ObjectId(classId) };
-              const update = { $inc: { availableSeats: -1 } }; // Reduce availableSeats by 1
+              const update = {
+                $inc: { availableSeats: -1, enrolledStudents: 1 } // Reduce availableSeats by 1 and increase enrolledStudents by 1
+              };
               const updateResult = await addedClassCollection.updateOne(updateQuery, update);
           
               res.send({ insertResult, deleteResult, updateResult });
