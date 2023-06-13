@@ -96,6 +96,13 @@ async function run() {
 
 
         });
+        app.get('/selectedClasses/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) }
+            const result = await selectedCollection.findOne(query);
+            res.send(result);
+        })
+        
         app.delete('/selectedClasses/:id', async (req, res) => {
             const id = req.params.id;
             console.log(id);
@@ -230,15 +237,15 @@ async function run() {
             const { price } = req.body;
             const amount = parseInt(price * 100);
             const paymentIntent = await stripe.paymentIntents.create({
-                amount: amount,
-                currency: 'usd',
-                payment_method_types: ['card']
+              amount: amount,
+              currency: 'usd',
+              payment_method_types: ['card']
             });
-
+      
             res.send({
-                clientSecret: paymentIntent.client_secret
+              clientSecret: paymentIntent.client_secret
             })
-        })
+          })
 
 
         // payment related api
